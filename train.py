@@ -1,5 +1,7 @@
 # @author mriver15 Michael Rivera
 # Trains a network on a dataset and saves the model as a checkpoint.
+# Test Launch String
+# python train.py --data flowers --save_dir runs --arch densenet121 --epochs 1
 
 # Local Resources & Functions
 from src import utils
