@@ -18,5 +18,5 @@ def train_args():
     args.add_argument('-hu', '--hidden_units', required=False, help='Set hyperparameters: Hidden Units')
     args.add_argument('-e', '--epochs', required=False, help='Set hyperparameters: Epochs, default to 1')
     args.add_argument('-d', '--gpu', required=False, help='Flag to use GPU for training')
-    args.add_argument('-pe', '--print_every', required=False, help='Printout counter, every how many iterations to print out stats')
+    args.add_argument('-pe', '--print_every', required=False, help='Printout counter, every how many iterations to print out stats, default to 10')
     return args.parse_args()
