@@ -1,5 +1,6 @@
 # MR - flowers to train
 flowers/
+runs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

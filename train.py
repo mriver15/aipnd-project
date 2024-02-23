@@ -121,8 +121,8 @@ def train_epoch(epoch, model, dataloader, print_every):
 
         # Accuracy Calculation
         ps = torch.exp(outputs).data
-        print('{} psmax'.format(labels.data))
-        equals = (labels.data == ps.max(1)[0]) # Top Result
+        # print('{} psmax'.format(labels.data))
+        equals = (labels.data == ps.max(1)[1]) # Top Result
         running_acc += equals.type_as(torch.FloatTensor()).mean()
 
         # Adjust learning weights
@@ -134,7 +134,7 @@ def train_epoch(epoch, model, dataloader, print_every):
         if i % print_every == 0:
             last_loss = running_loss / print_every
             running_loss = 0
-            print("Epoch: {} --- Batch: {} --- Accuracy: {} --- Loss: {}".format(epoch, i,running_acc, last_loss))
+            print("Epoch: {} --- Batch: {} --- Accuracy: {} --- Loss: {}".format(epoch+1, i,running_acc/(i+1), last_loss))
     else:
         epoch_acc = running_acc / len(dataloader['train']['dataloader'])
     return model, last_loss, epoch_acc
@@ -155,9 +155,9 @@ def get_classifier(model_type, hidden_units):
     if not hidden_units:
         hidden_units = 512
     classifier = nn.Sequential(OrderedDict([
-                          ('fc1', nn.Linear(in_units, hidden_units)),
+                          ('fc1', nn.Linear(in_units, int(hidden_units))),
                           ('relu', nn.ReLU()),
-                          ('fc2', nn.Linear(hidden_units, 180)),
+                          ('fc2', nn.Linear(int(hidden_units), 180)),
                           ('relu', nn.ReLU()),
                           ('droupout',nn.Dropout(0.5)),
                           ('fc3', nn.Linear(180, 102)),
@@ -165,17 +165,6 @@ def get_classifier(model_type, hidden_units):
                           ('fc4', nn.Linear(102, 102)),
                           ('output', nn.LogSoftmax(dim=1))
                           ]))
-    # classifier = nn.Sequential(OrderedDict([
-    #                       ('fc1', nn.Linear(1024, 512)),
-    #                       ('relu', nn.ReLU()),
-    #                       ('fc2', nn.Linear(512, 180)),
-    #                       ('relu', nn.ReLU()),
-    #                       ('droupout',nn.Dropout(0.5)),
-    #                       ('fc3', nn.Linear(180, 102)),
-    #                       ('relu', nn.ReLU()),
-    #                       ('fc4', nn.Linear(102, 102)),
-    #                       ('output', nn.LogSoftmax(dim=1))
-    #                       ]))
     
     return classifier
 
@@ -248,12 +237,12 @@ def train(model, dataloader, print_every, epochs):
 
 
     # Master train loop
-    for i in range(epochs):
-        print("Starting Epoch Training --- {}".format(i))
+    for e in range(epochs):
+        print("Starting Epoch Training --- {}".format(e+1))
 
         # Training Step
         model.train()
-        model, avg_loss, epoch_acc = train_epoch(i, model, dataloader, print_every)
+        model, avg_loss, epoch_acc = train_epoch(e, model, dataloader, print_every)
 
         running_vloss = 0
         # Validation Step
@@ -269,21 +258,21 @@ def train(model, dataloader, print_every, epochs):
 
                 # Validation Accuracy
                 ps = torch.exp(voutputs).data
-                vequals = (vlabels.data == ps.max(1)[0])
+                vequals = (vlabels.data == ps.max(1)[1])
                 running_vacc += vequals.type_as(torch.FloatTensor()).mean()
             else:
-                val_acc = running_vacc / len(dataloader['valid']['dataloader'])
+                val_acc = running_vacc / (i+1)
                 avg_vloss = running_vloss / (i+1)
         
         
-        print("Epoch: {} .. Train Loss: {} .. Valid Loss: {} .. Train Accuracy: {} .. Valid Accuracy: {}".format(i+1, avg_loss, avg_vloss, epoch_acc, val_acc))
+        print("Epoch: {} .. Train Loss: {} .. Valid Loss: {} .. Train Accuracy: {} .. Valid Accuracy: {}".format(e+1, avg_loss, avg_vloss, epoch_acc, val_acc))
         # Upon encountering a better model, save checkpoint
         if avg_vloss < best_vloss:
             best_vloss = avg_vloss
             model.class_to_idx = dataloader['train']['dataset'].class_to_idx
-            model.model_path = model.directory + '/' + 'model_{}_{}'.format(datetime.now().strftime('%Y%m%d_%H%M'), i+1)
+            model.model_path = model.directory + '/' + 'model_{}_{}'.format(datetime.now().strftime('%Y%m%d_%H%M'), e+1)
             torch.save({
-                'epoch': i+1,
+                'epoch': e+1,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': model.optimizer.state_dict(),
                 'loss': best_vloss
