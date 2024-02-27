@@ -1,7 +1,7 @@
 # @author mriver15 Michael Rivera
 # Trains a network on a dataset and saves the model as a checkpoint.
 # Test Launch String
-# python train.py --data flowers --save_dir runs --arch densenet121 --epochs 1
+# python train.py flowers --save_dir runs --arch densenet121 --epochs 3
 
 # Local Resources & Functions
 from src import utils
@@ -178,16 +178,6 @@ def get_device(device):
     if not device:
         return torch.device("cpu")
     return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-
-def get_category_mapping():
-    """
-        Retrieves cat_to_name file
-        contains mapping of category ID to the name of the flower category
-    """
-    with open('cat_to_name.json', 'r') as f:
-        cat_to_name = json.load(f)
-    return cat_to_name
 
 
 def get_dataloaders(img_dir):
