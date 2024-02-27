@@ -39,8 +39,10 @@ def main():
     # loads model based on architecture
     if args.arch == 'densenet121':
         model = models.densenet121(pretrained=True)
+        model.arch = 'densenet121'
     elif args.arch == 'vgg16':
         model = models.vgg16(pretrained=True)
+        model.arch = 'vgg16'
     else:
         print("{} Is not a valid Architecture".format(args.arch))
         exit(0)
@@ -262,10 +264,12 @@ def train(model, dataloader, print_every, epochs):
             model.class_to_idx = dataloader['train']['dataset'].class_to_idx
             model.model_path = model.directory + '/' + 'model_{}_{}'.format(datetime.now().strftime('%Y%m%d_%H%M'), e+1)
             torch.save({
+                'arch': model.arch,
                 'epoch': e+1,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': model.optimizer.state_dict(),
-                'loss': best_vloss
+                'loss': best_vloss,
+                'classifier': model.classifier
             }, model.model_path)
 
     return model
