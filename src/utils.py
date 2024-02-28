@@ -29,7 +29,7 @@ def pred_args():
     args = argparse.ArgumentParser()
     args.add_argument('image', help='Image to predict')
     args.add_argument('checkpoint',  help='Model checkpoint with path included')
-    args.add_argument('-g', '--gpu', default='cpu',  help='Flag to use GPU for training')
+    args.add_argument('-g', '--gpu', help='Flag to use GPU for training')
     args.add_argument('-cn', '--category_names', required=False, help='Use Mapping of categories to real names')
     args.add_argument('-t', '--top_k', required=False, help='Return top K most likely classes')
     return args.parse_args()

@@ -1,9 +1,10 @@
 # @author mriver15 Michael Rivera
 # Uses a trained network to predict the class for an input image
-# python predict.py flowers/test/1/image_06743.jpg runs/model_20240227_1601_1 --gpu cpu --category_names cat_to_name.json --top_k 10
+# python predict.py flowers/test/1/image_06743.jpg runs/model_20240228_0054_12 --gpu cpu --category_names cat_to_name.json --top_k 10
 from src import utils
 from torchvision import transforms, models
 import torch
+from torch import nn, optim
 from PIL import Image
 import math
 
@@ -22,8 +23,7 @@ def load_model(path):
         model = models.vgg16(pretrained=True)
 
     model.classifier = checkpoint['classifier']
-
-    print(checkpoint['optimizer_state_dict'])
+    model.class_to_idx = checkpoint['class_to_idx']
 
     return model
 
@@ -62,8 +62,6 @@ def process_img(image):
         im_norm = transforms.Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225])
         im_tensor = im_norm(im_transform(im))
 
-        # im_prep = np.array(im_tensor)
-
         # Uncomment next to show image
         # imshow(im_tensor)
         return im_tensor # TODO: Check if this is the correct data to send back
@@ -100,15 +98,19 @@ def predict(image, model, topk=5):
 
 
 
-def get_category_mapping(path):
+def get_category_mapping(path, class_to_idx):
     """
         Retrieves category file
         contains mapping of category ID to the name of the flower category
         @param path path to mapping character
     """
+    labels = []
     with open(path, 'r') as f:
         categories = json.load(f)
-    return categories
+
+    for fcat in class_to_idx:
+        labels.append(categories[fcat]) 
+    return labels
 
 def main():
     args = utils.pred_args()
@@ -122,13 +124,15 @@ def main():
     else:
         device = 'gpu'
 
+    model.device = device
+
     if args.category_names:
-        labels = get_category_mapping(args.category_names)
+        labels = get_category_mapping(args.category_names, model.class_to_idx)
     else:
         labels = None
 
     if args.top_k:
-        topk = args.top_k
+        topk = int(args.top_k)
     else:
         topk = None
     

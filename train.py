@@ -19,8 +19,12 @@ from datetime import datetime
 
 # Data Structures
 from collections import OrderedDict
-import json
 
+
+def check_gpu():
+    # Check torch version and CUDA status if GPU is enabled.
+    print(torch.__version__)
+    print(torch.cuda.is_available()) # Should return True when GPU is enabled.
 
 def main():
     """
@@ -28,6 +32,9 @@ def main():
     """
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     print("---- Training Started @ {}----".format(timestamp))
+
+    check_gpu()
+
     # Retrieves arguments from cli
     args = utils.train_args()
     
@@ -187,22 +194,26 @@ def get_dataloaders(img_dir):
     Retrieves and prepares training & validation data images
     @param img_dir image directory for training
     """
+    # Map to individual folders
+    train_dir = img_dir + '/train'
+    valid_dir = img_dir + '/valid'
+
     dataloader = {'train': {}, 'valid': {}}
     dataloader['train']['transform'] = transforms.Compose([transforms.RandomRotation(30),
-                                       transforms.RandomResizedCrop(224),
-                                       transforms.RandomHorizontalFlip(),
-                                       transforms.ToTensor(),
-                                       transforms.Normalize([0.485, 0.456, 0.406],
-                                                            [0.229, 0.224, 0.225])])
+                                                            transforms.RandomResizedCrop(224),
+                                                            transforms.RandomHorizontalFlip(),
+                                                            transforms.ToTensor(),
+                                                            transforms.Normalize([0.485, 0.456, 0.406],
+                                                                                    [0.229, 0.224, 0.225])])
     dataloader['valid']['transform'] = transforms.Compose([transforms.RandomRotation(30),
-                                       transforms.RandomResizedCrop(224),
-                                       transforms.RandomHorizontalFlip(),
-                                       transforms.ToTensor(),
-                                       transforms.Normalize([0.485, 0.456, 0.406],
-                                                            [0.229, 0.224, 0.225])])
+                                                            transforms.RandomResizedCrop(224),
+                                                            transforms.RandomHorizontalFlip(),
+                                                            transforms.ToTensor(),
+                                                            transforms.Normalize([0.485, 0.456, 0.406],
+                                                                                    [0.229, 0.224, 0.225])])
     
-    dataloader['train']['dataset'] = datasets.ImageFolder(img_dir, transform=dataloader['train']['transform']) 
-    dataloader['valid']['dataset'] = datasets.ImageFolder(img_dir, transform=dataloader['valid']['transform'])
+    dataloader['train']['dataset'] = datasets.ImageFolder(train_dir, transform=dataloader['train']['transform']) 
+    dataloader['valid']['dataset'] = datasets.ImageFolder(valid_dir, transform=dataloader['valid']['transform'])
 
     dataloader['train']['dataloader'] = torch.utils.data.DataLoader(dataloader['train']['dataset'], batch_size=64,shuffle=True)
     dataloader['valid']['dataloader'] = torch.utils.data.DataLoader(dataloader['valid']['dataset'], batch_size=32)
@@ -253,7 +264,7 @@ def train(model, dataloader, print_every, epochs):
                 vequals = (vlabels.data == ps.max(1)[1])
                 running_vacc += vequals.type_as(torch.FloatTensor()).mean()
             else:
-                val_acc = running_vacc / (i+1)
+                val_acc = running_vacc / len(dataloader['valid']['dataloader'])
                 avg_vloss = running_vloss / (i+1)
         
         
@@ -269,7 +280,8 @@ def train(model, dataloader, print_every, epochs):
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': model.optimizer.state_dict(),
                 'loss': best_vloss,
-                'classifier': model.classifier
+                'classifier': model.classifier,
+                'class_to_idx': model.class_to_idx
             }, model.model_path)
 
     return model
