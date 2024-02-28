@@ -27,6 +27,15 @@ def load_model(path):
 
     return model
 
+def get_device(device):
+    """
+    Checks for gpu availability if requested
+    @param device cpu or gpu
+    """
+    if device != 'gpu':
+        return torch.device("cpu")
+    return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
 def process_img(image):
     ''' Scales, crops, and normalizes a PIL image for a PyTorch model,
@@ -72,9 +81,15 @@ def predict_to_string(ps_list, id_list, labels):
     '''
     print("Prediction Matrix - Top {} Results".format(len(ps_list)))
     print("---------------------------------")
-    for i,r in enumerate(range(len(ps_list))):
-        idl = id_list[i]
-        print("{:.2f}% | {} ..".format(ps_list[i]*100, labels[int(idl)]))
+    if labels != None:
+        for i,r in enumerate(range(len(ps_list))):
+            idl = id_list[i]
+            print("{:.2f}% | {} ..".format(ps_list[i]*100, labels[int(idl)]))
+    else:
+        for i,r in enumerate(range(len(ps_list))):
+            idl = id_list[i]
+            print("{:.2f}% | {} ..".format(ps_list[i]*100, idl))
+        
 
 def predict(image, model, topk=5):
     """
@@ -86,6 +101,13 @@ def predict(image, model, topk=5):
     pre_im = torch.unsqueeze(process_img(image),0)
 
     model.eval()
+    if model.device != 'cpu':
+        if torch.cuda.is_available():
+            model.cuda()
+            pre_im = pre_im.to(model.device)
+
+    print("Weights in {}, Inputs in {}".format(model.device, pre_im.device))
+
 
     log_ps = model.forward(pre_im)
     ps = torch.exp(log_ps)
@@ -119,12 +141,7 @@ def main():
     model = load_model(args.checkpoint)
     img = args.image
 
-    if not args.gpu:
-        device = 'cpu'
-    else:
-        device = 'gpu'
-
-    model.device = device
+    model.device = get_device(args.gpu)
 
     if args.category_names:
         labels = get_category_mapping(args.category_names, model.class_to_idx)
@@ -138,7 +155,8 @@ def main():
     
     pss, ids = predict(img, model, topk)
 
-    predict_to_string(pss,ids,labels)
+    if not args.category_names:
+        predict_to_string(pss,ids,labels)
 
 
 if __name__ == '__main__':

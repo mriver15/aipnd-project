@@ -186,6 +186,8 @@ def get_device(device):
     """
     if not device:
         return torch.device("cpu")
+    if device != 'gpu':
+        return torch.device("cpu")
     return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
